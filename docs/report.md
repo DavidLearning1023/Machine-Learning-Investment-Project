@@ -1,7 +1,7 @@
 # Machine-Learning Investment Project — Technical Report
 # 机器学习投资研究项目 — 技术报告
 
-**David Hui** · 1786314617@qq.com · October 2026 | 2026 年 10 月
+**David Hui** · github.com/DavidLearning1023 · October 2026 | 2026 年 10 月
 
 > **Simulated returns, real methodology.**
 > **收益为模拟数据，方法为真。**

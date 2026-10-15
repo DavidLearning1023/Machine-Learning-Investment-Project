@@ -1,6 +1,6 @@
 # Machine-Learning Investment Project | 机器学习投资研究项目
 
-**David Hui** · 1786314617@qq.com · October 2026 · MIT
+**David Hui** · github.com/DavidLearning1023 · October 2026 · MIT
 
 **Weekly cross-sectional return prediction and long-only portfolio construction on an 80-asset panel — one pipeline from data integrity checks to frozen out-of-sample weights.**
 
