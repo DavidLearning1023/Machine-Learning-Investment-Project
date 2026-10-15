@@ -58,7 +58,7 @@ def main() -> None:
     weeks = np.arange(1, N_WEEKS + 1)
     assets = np.arange(1, N_STOCKS + 1)
     SECTORS = [name for name, _ in SECTOR_SIZES]
-    # block assignment reproduces the study panel's unequal bucket sizes
+    # contiguous grouping reproduces the study panel's unequal bucket sizes
     sector_of, nxt = {}, 1
     for name, size in SECTOR_SIZES:
         for a in range(nxt, nxt + size):
