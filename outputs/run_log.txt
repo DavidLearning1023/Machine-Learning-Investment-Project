@@ -6,11 +6,12 @@ STAGE 0 - DATA LOAD AND INTEGRITY CHECKS
   validation         weeks= 26 stocks= 80 rows=  2080
   private_evaluation weeks=156 stocks= 80 rows= 12480
   predictors constant within a week (no cross-sectional power): 6
+  anonymised 4 industry buckets -> Sector_A, Sector_B, Sector_C, Sector_D; tickers/company names -> asset_NN / Asset NN
 
 ==============================================================================
 STAGE 1 - DATA AND PREDICTION BENCHMARK
 ==============================================================================
-  zero-MSE cross-check (exact summation): 0.003090898398 vs 0.003090898398
+  zero-MSE cross-check (exact summation): 0.003090898398 vs 0.003090898398  |diff|=0.00e+00
   train mean=-0.0010226791  sd=0.0565097717
   strongest pair: momentum_short <-> momentum_medium = +0.6399936121
   zero-forecast: train MSE=0.0031938884  val MSE=0.0030908984  sum(y^2)=6.4290686681
@@ -121,7 +122,7 @@ STAGE 2 - LINEAR MODELS (OLS / LASSO)
     alpha=0.005896205343  valMSE=0.0030993869  R2=-0.00274628  nz=1
     alpha=0.006471078085  valMSE=0.0031083096  R2=-0.00563306  nz=0
   LASSO  train MSE=0.0031551909  val MSE=0.0030640089  OOS R2=+0.0086995595  nz=4
-  over alpha in [0.001,0.003]: valMSE 0.0030640089..0.0031035289  (range 1.290%), nonzero 4..8
+  over alpha in [0.000970662,0.0029767] (12 grid points): valMSE 0.0030640089..0.0031035289  (range 1.290%), nonzero 4..8
 
 ==============================================================================
 STAGE 3 - NONLINEAR MODEL (RANDOM FOREST)
@@ -132,7 +133,7 @@ STAGE 3 - NONLINEAR MODEL (RANDOM FOREST)
     depth=4  leaf=60  trainMSE=0.0025951406  valMSE=0.0033251511  R2=-0.07578792
     depth=8  leaf=30  trainMSE=0.0020571795  valMSE=0.0035064431  R2=-0.13444141
     depth=8  leaf=60  trainMSE=0.0021962617  valMSE=0.0033997844  R2=-0.09993405
-  affine-invariance check: max |pred(3Z+7) - pred(Z)| = 8.67e-19
+  affine-invariance diagnostic: max |pred(3Z+7) - pred(Z)| = 8.67e-19  (prediction scale 1.44e-02, ratio 6.02e-17)
   SELECTED: max_depth=2 min_samples_leaf=60  n_estimators=300 max_features=4 seed=2026
   train MSE=0.0029414926  val MSE=0.0032193579  OOS R2=-0.0415605689
   built-in importance mass on the six within-week-constant market predictors = 0.8621
@@ -196,3 +197,5 @@ STAGE 7 - FINAL WEIGHTS (REFIT ON WEEKS 1-104, THEN FIXED)
 ==============================================================================
   refit Random forest on 8320 rows (Weeks 1-104); scaler n_samples_seen=8320.0
   weights 156x81; evaluation-window sector weight mean=0.6223 max=1.0000 weeks>=0.8=17 weeks=1.0=2
+
+DONE -> outputs/

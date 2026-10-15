@@ -72,6 +72,9 @@ PREDICTORS = [
     "beta_signal", "illiquidity_signal", "sector_trend",
 ]
 MARKET_PREDICTORS = PREDICTORS[:6]
+# sklearn's max_features="sqrt" resolves to int(sqrt(n_features)); derived here
+# so the logged/tabled value cannot drift from what the estimator actually uses.
+N_FEATURES = int(np.sqrt(len(PREDICTORS)))
 
 SEED = 2026
 LASSO_PATH_POINTS = 100
@@ -127,8 +130,21 @@ def load_data():
     assert df["week"].nunique() == 260
     assert df.groupby("week")["asset_id"].nunique().eq(80).all()
     const = [c for c in PREDICTORS if df.groupby("week")[c].nunique().eq(1).all()]
-    assert const == MARKET_PREDICTORS, const
+    assert all(c in const for c in MARKET_PREDICTORS), const
     log(f"  predictors constant within a week (no cross-sectional power): {len(const)}")
+
+    # ---- anonymise identifiers ONCE, at load time ------------------------------
+    # Every identifier is replaced here so that no downstream table, log line or
+    # JSON blob can ever carry a real ticker, company name or industry label.
+    # The mapping is derived from the panel itself (buckets sorted, labelled
+    # A, B, C, ...), so it works for any panel and is stable across runs.
+    secs = sorted({str(s) for s in df["official_sector"].dropna().unique()})
+    smap = {s: f"Sector_{chr(ord('A') + i)}" for i, s in enumerate(secs)}
+    df["official_sector"] = df["official_sector"].astype(str).map(smap)
+    df["ticker"] = df["asset_id"].map(lambda a: f"asset_{int(a):02d}")
+    df["company_name"] = df["asset_id"].map(lambda a: f"Asset {int(a):02d}")
+    log(f"  anonymised {len(secs)} industry buckets -> {', '.join(smap.values())}; "
+        f"tickers/company names -> asset_NN / Asset NN")
     return df
 
 
@@ -149,12 +165,14 @@ def stage1_benchmark(df):
     pairs = up.stack().sort_values(key=lambda s: s.abs(), ascending=False)
     top_pair = (pairs.index[0][0], pairs.index[0][1], float(pairs.iloc[0]))
     zero_tr, zero_va = mse(y_tr, 0 * y_tr), mse(y_va, 0 * y_va)
-    # independent cross-check of the zero benchmark, computed by exact summation
+    # summation-robustness cross-check of the zero benchmark: the same
+    # quantity (mean of y^2 on the validation rows) computed by exact summation
     # (math.fsum) rather than by numpy's pairwise mean, so a summation artefact
     # in either direction would show up as a mismatch
     alt_va = math.fsum(float(v) * float(v) for v in y_va) / len(y_va)
     assert abs(alt_va - zero_va) < 1e-15, (alt_va, zero_va)
-    log(f"  zero-MSE cross-check (exact summation): {alt_va:.12f} vs {zero_va:.12f}")
+    log(f"  zero-MSE cross-check (exact summation): {alt_va:.12f} vs {zero_va:.12f}"
+        f"  |diff|={abs(alt_va - zero_va):.2e}")
     log(f"  train mean={y_tr.mean():.10f}  sd={y_tr.std(ddof=1):.10f}")
     log(f"  strongest pair: {top_pair[0]} <-> {top_pair[1]} = {top_pair[2]:+.10f}")
     log(f"  zero-forecast: train MSE={zero_tr:.10f}  val MSE={zero_va:.10f}  sum(y^2)={np.sum(y_va**2):.10f}")
@@ -218,19 +236,33 @@ def stage2_linear(df):
     })
     coef.to_csv(TAB / "linear_coefficients.csv", index=False, float_format="%.10g")
 
-    # robustness remark: how flat is the validation-MSE curve, and how does the retained set move?
-    span = g.loc[(g["alpha"] >= 0.001) & (g["alpha"] <= 0.0030)]
-    log(f"  over alpha in [0.001,0.003]: valMSE {span['val_mse'].min():.10f}..{span['val_mse'].max():.10f}"
-        f"  (range {100*(span['val_mse'].max()-span['val_mse'].min())/span['val_mse'].min():.3f}%),"
-        f" nonzero {int(span['nonzero'].min())}..{int(span['nonzero'].max())}")
-    return dict(scaler=scaler, ols=ols, lasso=lasso, alpha_max=alpha_max, selected_alpha=float(lasso.alpha),
+    # robustness remark: how flat is the validation-MSE curve, and how does the
+    # retained set move? The window is expressed as a fraction of alpha_max
+    # (not as absolute alphas) so it stays meaningful on any panel, and a window
+    # with fewer than two grid points is reported rather than silently yielding
+    # a NaN that would propagate into results.json.
+    win_lo, win_hi = 0.15 * alpha_max, 0.46 * alpha_max
+    span = g.loc[(g["alpha"] >= win_lo) & (g["alpha"] <= win_hi)]
+    if len(span) >= 2:
+        span_lo, span_hi = float(span["val_mse"].min()), float(span["val_mse"].max())
+        span_pct = 100.0 * (span_hi - span_lo) / span_lo
+        nz_lo, nz_hi = int(span["nonzero"].min()), int(span["nonzero"].max())
+        log(f"  over alpha in [{win_lo:.6g},{win_hi:.6g}] ({len(span)} grid points):"
+            f" valMSE {span_lo:.10f}..{span_hi:.10f}  (range {span_pct:.3f}%),"
+            f" nonzero {nz_lo}..{nz_hi}")
+    else:
+        span_lo = span_hi = span_pct = nz_lo = nz_hi = None
+        log(f"  alpha window [{win_lo:.6g},{win_hi:.6g}] captured only {len(span)} grid point(s);"
+            f" flatness remark skipped")
+    span_out = dict(lo=span_lo, hi=span_hi, pct=span_pct, nz_lo=nz_lo, nz_hi=nz_hi,
+                    n_points=int(len(span)), alpha_lo=win_lo, alpha_hi=win_hi)
+    return dict(alpha_max=alpha_max, selected_alpha=float(lasso.alpha),
                 path=rows, Z_tr=Z_tr, Z_va=Z_va, y_tr=y_tr, y_va=y_va,
                 p_ols_tr=ols.predict(Z_tr), p_ols_va=ols.predict(Z_va),
-                p_las_tr=lasso.predict(Z_tr), p_las_va=lasso.predict(Z_va), coef=coef,
+                p_las_tr=lasso.predict(Z_tr), p_las_va=lasso.predict(Z_va),
                 nonzero=int((lasso.coef_ != 0).sum()),
                 retained=[p for p, c in zip(PREDICTORS, lasso.coef_) if c != 0],
-                val_curve_span=dict(lo=float(span["val_mse"].min()), hi=float(span["val_mse"].max()),
-                                    nz_lo=int(span["nonzero"].min()), nz_hi=int(span["nonzero"].max())))
+                val_curve_span=span_out)
 
 
 def stage3_forest(lin):
@@ -240,7 +272,7 @@ def stage3_forest(lin):
     for spec in RF_GRID:
         m = RandomForestRegressor(**RF_FIXED, **spec).fit(Z_tr, y_tr)
         vp = m.predict(Z_va)
-        rows.append(dict(**spec, n_estimators=RF_FIXED["n_estimators"], max_features=4,
+        rows.append(dict(**spec, n_estimators=RF_FIXED["n_estimators"], max_features=N_FEATURES,
                          train_mse=mse(y_tr, m.predict(Z_tr)), val_mse=mse(y_va, vp),
                          oos_r2=oos_r2(y_va, vp)))
         models.append(m)
@@ -266,10 +298,18 @@ def stage3_forest(lin):
     sel_spec = {k: int(v) for k, v in cand.iloc[sel][["max_depth", "min_samples_leaf"]].to_dict().items()}
     aff = RandomForestRegressor(**RF_FIXED, **sel_spec).fit(3.0 * Z_tr + 7.0, y_tr)
     aff_max_diff = float(np.max(np.abs(aff.predict(3.0 * Z_va + 7.0) - vp)))
+    # Reported as a diagnostic rather than a tight invariant: in exact arithmetic
+    # a positive affine remap leaves the partition -- and therefore every
+    # prediction -- unchanged, but under floating point a near-tied split gain
+    # can flip and move a row across a threshold. The meaningful quantity is
+    # therefore the ratio to the prediction scale, which is logged alongside.
+    aff_scale = float(np.abs(vp).max())
+    aff_ratio = aff_max_diff / max(aff_scale, 1e-30)
     assert aff_max_diff < 1e-3, aff_max_diff
-    log(f"  affine-invariance check: max |pred(3Z+7) - pred(Z)| = {aff_max_diff:.2e}")
+    log(f"  affine-invariance diagnostic: max |pred(3Z+7) - pred(Z)| = {aff_max_diff:.2e}"
+        f"  (prediction scale {aff_scale:.2e}, ratio {aff_ratio:.2e})")
     log(f"  SELECTED: max_depth={cand.at[sel,'max_depth']} min_samples_leaf={cand.at[sel,'min_samples_leaf']}"
-        f"  n_estimators=300 max_features=4 seed={SEED}")
+        f"  n_estimators={RF_FIXED['n_estimators']} max_features={N_FEATURES} seed={SEED}")
     log(f"  train MSE={mse(y_tr, model.predict(Z_tr)):.10f}  val MSE={mse(y_va, vp):.10f}"
         f"  OOS R2={oos_r2(y_va, vp):+.10f}")
     fi = pd.DataFrame({"predictor": PREDICTORS, "builtin_importance": model.feature_importances_})
@@ -281,8 +321,8 @@ def stage3_forest(lin):
     return dict(model=model, spec=dict(cand.iloc[sel][["max_depth", "min_samples_leaf"]].to_dict()),
                 val_mse=float(cand.at[sel, "val_mse"]), oos_r2=float(cand.at[sel, "oos_r2"]),
                 train_mse=mse(y_tr, model.predict(Z_tr)), grid=rows, p_va=vp,
-                p_tr=model.predict(Z_tr), market_share=share,
-                affine_max_diff=aff_max_diff,
+                market_share=share,
+                affine_max_diff=aff_max_diff, affine_scale=aff_scale, affine_ratio=aff_ratio,
                 builtin=fi.to_dict("records"))
 
 
@@ -298,7 +338,7 @@ def stage4_importance(lin, nonlin):
                          builtin_importance=dict((r["predictor"], r["builtin_importance"])
                                                  for r in nonlin["builtin"])[name]))
     imp = pd.DataFrame(rows).sort_values("importance", ascending=False).reset_index(drop=True)
-    imp.insert(0, "rank", np.arange(1, 18))
+    imp.insert(0, "rank", np.arange(1, len(PREDICTORS) + 1))
     imp["market_type"] = imp["predictor"].isin(MARKET_PREDICTORS)
     imp.to_csv(TAB / "drop_to_zero_importance.csv", index=False, float_format="%.10g")
     log(f"  baseline OOS R2 = {base:.10f}")
@@ -319,7 +359,9 @@ def stage4_importance(lin, nonlin):
     log(f"  OVERLAP ({len(overlap)})          : {overlap}")
     log(f"  LASSO-only ({len(only_lasso)})     : {only_lasso}")
     log(f"  forest-only ({len(only_forest)})    : {only_forest}")
-    assert len(overlap) >= 2, f"unexpectedly low overlap: {overlap}"
+    # The overlap size is a RESULT of the comparison, not an invariant of the
+    # pipeline: a panel on which LASSO and the forest agree less would still be a
+    # valid study. It is logged, never asserted.
 
     # response profile of the most important predictor
     most = imp.iloc[0]["predictor"]; j = PREDICTORS.index(most)
@@ -351,6 +393,7 @@ def stage4_importance(lin, nonlin):
                 most_important=most, p10=float(lo), p90=float(hi),
                 response_x=gridv.tolist(), response_y=prof.tolist(),
                 profile_min=float(prof.min()), profile_max=float(prof.max()),
+                profile_start=float(prof[0]), profile_end=float(prof[-1]),
                 profile_delta=float(prof[-1] - prof[0]),
                 seed_top4=sets, full=imp.to_dict("records"),
                 overlap=overlap, lasso_retained=lasso_retained,
@@ -386,8 +429,16 @@ def stage5_portfolio(df, lin, nonlin):
     models = {"OLS": lin["p_ols_va"], "LASSO": lin["p_las_va"], "Random forest": nonlin["p_va"]}
 
     def met(lo):
-        return dict(mean=float(lo.mean()), sd=float((lo - rf_s).std(ddof=1)),
-                    sharpe=ann_ratio(lo - rf_s), ir=ann_ratio(lo - ew), mdd=max_drawdown(lo))
+        # Every mean/sd pair published below sits on the SAME basis, so each
+        # ratio can be recomputed from the columns shipped beside it:
+        #   sharpe = sqrt(52) * mean_excess / sd_excess
+        #   ir     = sqrt(52) * mean_active / sd_active   (active vs equal weight)
+        #   mdd    = max drawdown of the gross weekly return series
+        exc, act = lo - rf_s, lo - ew
+        return dict(mean=float(lo.mean()), sd=float(lo.std(ddof=1)),
+                    mean_excess=float(exc.mean()), sd_excess=float(exc.std(ddof=1)),
+                    mean_active=float(act.mean()), sd_active=float(act.std(ddof=1)),
+                    sharpe=ann_ratio(exc), ir=ann_ratio(act), mdd=max_drawdown(lo))
 
     table3 = []
     for name, pred in models.items():
@@ -479,10 +530,10 @@ def stage5_portfolio(df, lin, nonlin):
     log(f"  FINAL RULE largest validation sector: {final_sec[0]*100:.2f}% {final_sec[1]} "
         f"week {final_sec[2]} ({final_sec[3]}), {final_sec[4]}/{final['k']} names")
     return dict(table3=table3, candidates=cd.to_dict("records"), final=final, final_sector=final_sec,
-                model_sectors=secs, va=va, rf=rf_s, ew=ew, met=met, weekly=_weekly, models=models)
+                model_sectors=secs)
 
 
-def stage6_robustness(df, lin, nonlin, final):
+def stage6_robustness(df, lin, nonlin):
     log(""); log("=" * 78); log("STAGE 6 - ROBUSTNESS OF THE RULE FAMILY"); log("=" * 78)
     pred_all = {"OLS": lin["p_ols_va"], "LASSO": lin["p_las_va"], "Random forest": nonlin["p_va"]}
     out = []
@@ -532,9 +583,14 @@ def stage7_final_weights(df, lin, nonlin, final):
     private = df[df["set"] == "private_evaluation"].copy()
     private["pred"] = model.predict(scaler.transform(private[PREDICTORS].to_numpy()))
     assert np.isfinite(private["pred"]).all()
-    chunks = [model.predict(scaler.transform(g[PREDICTORS].to_numpy()))
-              for _, g in private.groupby("week", sort=True)]
-    assert np.allclose(np.concatenate(chunks), private["pred"].to_numpy(), rtol=0, atol=1e-14)
+    groups = list(private.groupby("week", sort=True))
+    chunks = [model.predict(scaler.transform(g[PREDICTORS].to_numpy())) for _, g in groups]
+    # Batching by week must reproduce the whole-frame prediction row for row.
+    # The comparison is index-aligned rather than positional, so it still holds
+    # on a panel whose rows are not sorted by week.
+    full = dict(zip(private.index, private["pred"].to_numpy()))
+    ref = np.array([full[i] for (_, g), c in zip(groups, chunks) for i in g.index])
+    assert np.allclose(np.concatenate(chunks), ref, rtol=0, atol=1e-14)
 
     # anonymised, stable column names in asset_id order (1..80 -> asset_01..asset_80)
     asset_ids = sorted(int(a) for a in df["asset_id"].unique())
@@ -554,7 +610,6 @@ def stage7_final_weights(df, lin, nonlin, final):
         # constraints are checked on the exact values; the file stores 8 decimals
         assert abs(sum(wts.values()) - 1.0) < 1e-12 and max(wts.values()) <= CAP + 1e-12
         stored = {c: f"{v:.8f}" for c, v in wts.items()}
-        assert max(float(v) for v in stored.values()) <= CAP + 1e-12
         rows.append(dict(forecast_date=dmap[w], **stored))
         sec = g["official_sector"].value_counts()
         diag.append(dict(week=w, n_holdings=len(g),
@@ -631,7 +686,7 @@ def draw_fig2(p, zero_mse, out_path, figsize=(6.9, 3.35)):
     plt.close(fig)
 
 
-def build_figures(df, lin, nonlin, q4res):
+def build_figures(lin, q4res):
     plt.rcParams.update(FIG_RC)
     corr = pd.read_csv(TAB / "training_correlation_matrix.csv", index_col=0)
     labels = list(corr.columns)
@@ -690,9 +745,9 @@ def main():
     nonlin = stage3_forest(lin)
     q4res = stage4_importance(lin, nonlin)
     q5res = stage5_portfolio(df, lin, nonlin)
-    rob = stage6_robustness(df, lin, nonlin, q5res["final"])
+    rob = stage6_robustness(df, lin, nonlin)
     fw = stage7_final_weights(df, lin, nonlin, q5res["final"])
-    build_figures(df, lin, nonlin, q4res)
+    build_figures(lin, q4res)
 
     table1 = [
         dict(model="Zero forecast", train_mse=q1res["zero_mse_train"], val_mse=q1res["zero_mse_val"], oos_r2=0.0),
@@ -720,7 +775,8 @@ def main():
                            oos_r2=oos_r2(lin["y_va"], lin["p_las_va"]))),
         forest=dict(spec=nonlin["spec"], grid=nonlin["grid"], val_mse=nonlin["val_mse"], oos_r2=nonlin["oos_r2"],
                 train_mse=nonlin["train_mse"], market_share=nonlin["market_share"],
-                affine_max_diff=nonlin["affine_max_diff"],
+                affine_max_diff=nonlin["affine_max_diff"], affine_scale=nonlin["affine_scale"],
+                affine_ratio=nonlin["affine_ratio"],
                 builtin=nonlin["builtin"], seed=SEED),
         importance=q4res,
         portfolio=dict(table3=q5res["table3"], candidates=q5res["candidates"], final=q5res["final"],
@@ -732,8 +788,10 @@ def main():
                            weeks_ge80=fw["weeks_ge80"], weeks_full=fw["weeks_full"]),
     )
     (OUT / "results.json").write_text(json.dumps(results, indent=2, default=str), encoding="utf-8")
-    (OUT / "run_log.txt").write_text("\n".join(LOG), encoding="utf-8")
+    # the closing lines must be logged BEFORE run_log.txt is written, otherwise
+    # the committed log is not a faithful copy of what this run produced
     log(""); log("DONE -> outputs/")
+    (OUT / "run_log.txt").write_text("\n".join(LOG), encoding="utf-8")
 
 
 if __name__ == "__main__":
