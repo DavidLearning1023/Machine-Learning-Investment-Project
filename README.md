@@ -49,28 +49,30 @@ window whose outcomes are withheld. On it the pipeline:
 
 ## Key results | 主要结果
 
-**中文**
+**表 1.** 预测结果（验证周 79–104，MSE 单位为平方十进制收益）  
+**Table 1.** Prediction results (validation weeks 79–104; MSE in squared decimal returns)
 
-**预测结果**（验证周 79–104，MSE 单位为平方十进制收益）
-
-| 模型 Model | 训练 MSE | 验证 MSE | 验证 OOS R² |
+| 模型<br>Model | 训练 MSE<br>Train MSE | 验证 MSE<br>Val MSE | 验证 OOS R²<br>Val OOS R² |
 | --- | ---: | ---: | ---: |
 | 零预测 Zero forecast | 0.0031939 | 0.0030909 | 0.0000 |
-| OLS（17 个预测因子） | 0.0031130 | 0.0031545 | −0.0206 |
+| OLS（17 个预测因子 / 17 predictors） | 0.0031130 | 0.0031545 | −0.0206 |
 | LASSO（α = 0.002801） | 0.0031552 | 0.0030640 | **+0.0087** |
-| 随机森林（深度 2，叶 60） | 0.0029415 | 0.0032194 | −0.0416 |
+| 随机森林（深度 2，叶 60 / depth 2, leaf 60） | 0.0029415 | 0.0032194 | −0.0416 |
 
-只有 LASSO 在样本外打败了零预测。森林的训练误差最低、验证误差最差——一个教科书式的过拟合，也提醒我们：OOS R² 是一个拟合诊断量，不是损益表。
+**表 2.** 组合结果（周度，26 个验证周；相对等权为 80 只等权基准）  
+**Table 2.** Portfolio results (weekly, 26 validation weeks; IR is measured against an 80-asset equal-weight benchmark)
 
-**组合结果**（周度，26 个验证周）
-
-| 模型 / 规则 | 周度多空价差 | Long-only 夏普 | 相对等权 IR | 最大回撤 |
+| 模型 / 规则<br>Model / rule | 周度多空价差<br>Weekly long-short | Long-only 夏普<br>Long-only Sharpe | 相对等权 IR<br>IR vs equal wt. | 最大回撤<br>Max drawdown |
 | --- | ---: | ---: | ---: | ---: |
 | OLS / top 16 | +0.0220 | 4.45 | 7.87 | −0.0477 |
 | LASSO / top 16 | +0.0209 | 4.41 | 10.31 | −0.0478 |
 | 随机森林 / top 16 | +0.0244 | 4.90 | 9.87 | −0.0426 |
-| **随机森林 / top 14 — 入选** | — | **5.15** | **10.19** | **−0.0402** |
-| 80 只等权 | — | 1.78 | 0.00 | −0.0777 |
+| **随机森林 / top 14 — 入选**<br>**Random forest / top 14 — selected** | — | **5.15** | **10.19** | **−0.0402** |
+| 80 只等权 Equal weight | — | 1.78 | 0.00 | −0.0777 |
+
+**中文**
+
+只有 LASSO 在样本外打败了零预测。森林的训练误差最低、验证误差最差——一个教科书式的过拟合，也提醒我们：OOS R² 是一个拟合诊断量，不是损益表。
 
 **两个排名互相矛盾。** LASSO 赢下了预测表，却输掉了组合表：top-K 规则只使用预测值在**周内**的横截面**顺序**，把某一周的全部预测值乘以同一个正常数，持仓完全不变。真正把两者区分开的是**模型形式**，而不是预测值的离散程度。
 
@@ -78,28 +80,9 @@ window whose outcomes are withheld. On it the pipeline:
 
 **English**
 
-**Prediction** (validation weeks 79–104, MSE in squared decimal returns)
-
-| Model | Training MSE | Validation MSE | Validation OOS R² |
-| --- | ---: | ---: | ---: |
-| Zero forecast | 0.0031939 | 0.0030909 | 0.0000 |
-| OLS (17 predictors) | 0.0031130 | 0.0031545 | −0.0206 |
-| LASSO (α = 0.002801) | 0.0031552 | 0.0030640 | **+0.0087** |
-| Random forest (depth 2, leaf 60) | 0.0029415 | 0.0032194 | −0.0416 |
-
 Only LASSO beats the zero forecast out of sample. The forest has the lowest
 training error and the worst validation error — a textbook overfit, and a
 reminder that OOS R² is a fit diagnostic, not a P&L.
-
-**Portfolios** (weekly, 26 validation weeks)
-
-| Model / rule | Weekly long-short spread | Long-only Sharpe | IR vs equal weight | Max drawdown |
-| --- | ---: | ---: | ---: | ---: |
-| OLS / top 16 | +0.0220 | 4.45 | 7.87 | −0.0477 |
-| LASSO / top 16 | +0.0209 | 4.41 | 10.31 | −0.0478 |
-| Random forest / top 16 | +0.0244 | 4.90 | 9.87 | −0.0426 |
-| **Random forest / top 14 — selected** | — | **5.15** | **10.19** | **−0.0402** |
-| 80-asset equal weight | — | 1.78 | 0.00 | −0.0777 |
 
 **The two rankings disagree.** LASSO wins the prediction table and loses the
 portfolio table: a top-K rule uses only the cross-sectional *order* of forecasts
@@ -114,23 +97,39 @@ score of any candidate — the win does not rest on one lucky stretch of weeks.
 
 ## Figures | 图表
 
-**中文**
+Each figure appears once; the caption is bilingual. 每张图只出现一次，题注为中英对照。
 
-| | |
-| --- | --- |
-| ![Training correlation matrix](outputs/figures/fig1.png) | **图 1.** 17 个预测因子的训练相关矩阵（仅训练行）；\|r\| ≥ 0.25 的格子已标注。 |
-| ![LASSO penalty path](outputs/figures/fig2.png) | **图 2.** 验证 MSE 对 LASSO 惩罚项（左轴）与保留信号个数（右轴）。所选点位于平坦区，而非刀锋位置。 |
-| ![Drop-to-zero importance](outputs/figures/fig3.png) | **图 3.** 冻结森林中最大的五个带符号 drop-to-zero 重要性得分。 |
-| ![Response profile](outputs/figures/fig4.png) | **图 4.** 最重要预测因子在其训练 10%–90% 分位上的平均响应——分段常数，树阈值的典型特征。 |
+<figure>
+  <img src="outputs/figures/fig1.png" alt="Training correlation matrix">
+  <figcaption>
+    <b>图 1.</b> 17 个预测因子的训练相关矩阵（仅训练行）；|r| ≥ 0.25 的格子已标注。<br>
+    <b>Figure 1.</b> Training correlation matrix of the 17 predictors (training rows only); cells with |r| ≥ 0.25 are labelled.
+  </figcaption>
+</figure>
 
-**English**
+<figure>
+  <img src="outputs/figures/fig2.png" alt="LASSO penalty path">
+  <figcaption>
+    <b>图 2.</b> 验证 MSE 对 LASSO 惩罚项（对数刻度，左轴）与保留信号个数（右轴）。所选点位于平坦区，而非刀锋位置。<br>
+    <b>Figure 2.</b> Validation MSE against the LASSO penalty (log scale, left axis) and the number of retained signals (right axis). The selected point sits in a flat region, not a knife edge.
+  </figcaption>
+</figure>
 
-| | |
-| --- | --- |
-| ![Training correlation matrix](outputs/figures/fig1.png) | **Figure 1.** Training correlation matrix of the 17 predictors (training rows only); cells with \|r\| ≥ 0.25 are labelled. |
-| ![LASSO penalty path](outputs/figures/fig2.png) | **Figure 2.** Validation MSE against the LASSO penalty (left axis) and the number of retained signals (right axis). The selected point sits in a flat region, not a knife edge. |
-| ![Drop-to-zero importance](outputs/figures/fig3.png) | **Figure 3.** Five largest signed drop-to-zero importance scores of the frozen forest. |
-| ![Response profile](outputs/figures/fig4.png) | **Figure 4.** Average response of the most important predictor across its training 10th–90th percentiles — piecewise constant, the signature of tree thresholds. |
+<figure>
+  <img src="outputs/figures/fig3.png" alt="Drop-to-zero importance">
+  <figcaption>
+    <b>图 3.</b> 冻结森林中最大的五个带符号 drop-to-zero 重要性得分。<br>
+    <b>Figure 3.</b> Five largest signed drop-to-zero importance scores of the frozen forest.
+  </figcaption>
+</figure>
+
+<figure>
+  <img src="outputs/figures/fig4.png" alt="Response profile">
+  <figcaption>
+    <b>图 4.</b> 最重要预测因子在其训练 10%–90% 分位上的平均响应——分段常数，树阈值的典型特征。<br>
+    <b>Figure 4.</b> Average response of the most important predictor across its training 10th–90th percentiles — piecewise constant, the signature of tree thresholds.
+  </figcaption>
+</figure>
 
 ---
 
