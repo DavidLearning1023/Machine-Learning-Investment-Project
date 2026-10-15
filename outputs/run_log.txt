@@ -1,0 +1,198 @@
+data file: panel.csv
+==============================================================================
+STAGE 0 - DATA LOAD AND INTEGRITY CHECKS
+==============================================================================
+  training           weeks= 78 stocks= 80 rows=  6240
+  validation         weeks= 26 stocks= 80 rows=  2080
+  private_evaluation weeks=156 stocks= 80 rows= 12480
+  predictors constant within a week (no cross-sectional power): 6
+
+==============================================================================
+STAGE 1 - DATA AND PREDICTION BENCHMARK
+==============================================================================
+  zero-MSE cross-check (exact summation): 0.003090898398 vs 0.003090898398
+  train mean=-0.0010226791  sd=0.0565097717
+  strongest pair: momentum_short <-> momentum_medium = +0.6399936121
+  zero-forecast: train MSE=0.0031938884  val MSE=0.0030908984  sum(y^2)=6.4290686681
+
+==============================================================================
+STAGE 2 - LINEAR MODELS (OLS / LASSO)
+==============================================================================
+  OLS    train MSE=0.0031130152  val MSE=0.0031544950  OOS R2=-0.0205754475
+  alpha_max=0.00647107808493  100-point log path
+    alpha=6.471078085e-07  valMSE=0.0031544540  R2=-0.02056219  nz=17
+    alpha=7.10200021e-07  valMSE=0.0031544501  R2=-0.02056090  nz=17
+    alpha=7.794436463e-07  valMSE=0.0031544457  R2=-0.02055948  nz=17
+    alpha=8.554384395e-07  valMSE=0.0031544409  R2=-0.02055793  nz=17
+    alpha=9.388426314e-07  valMSE=0.0031544356  R2=-0.02055622  nz=17
+    alpha=1.030378629e-06  valMSE=0.0031544298  R2=-0.02055434  nz=17
+    alpha=1.130839273e-06  valMSE=0.0031544234  R2=-0.02055229  nz=17
+    alpha=1.241094706e-06  valMSE=0.0031544165  R2=-0.02055003  nz=17
+    alpha=1.362099908e-06  valMSE=0.0031544088  R2=-0.02054755  nz=17
+    alpha=1.494902968e-06  valMSE=0.0031544004  R2=-0.02054484  nz=17
+    alpha=1.640654161e-06  valMSE=0.0031543912  R2=-0.02054185  nz=17
+    alpha=1.800615917e-06  valMSE=0.0031543811  R2=-0.02053858  nz=17
+    alpha=1.976173746e-06  valMSE=0.0031543700  R2=-0.02053499  nz=17
+    alpha=2.168848246e-06  valMSE=0.0031543578  R2=-0.02053105  nz=17
+    alpha=2.380308273e-06  valMSE=0.0031543444  R2=-0.02052672  nz=17
+    alpha=2.612385391e-06  valMSE=0.0031543297  R2=-0.02052198  nz=17
+    alpha=2.867089742e-06  valMSE=0.0031543136  R2=-0.02051677  nz=17
+    alpha=3.146627452e-06  valMSE=0.0031542960  R2=-0.02051105  nz=17
+    alpha=3.453419744e-06  valMSE=0.0031542766  R2=-0.02050478  nz=17
+    alpha=3.790123906e-06  valMSE=0.0031542553  R2=-0.02049790  nz=17
+    alpha=4.159656308e-06  valMSE=0.0031542320  R2=-0.02049035  nz=17
+    alpha=4.565217663e-06  valMSE=0.0031542064  R2=-0.02048207  nz=17
+    alpha=5.010320749e-06  valMSE=0.0031541783  R2=-0.02047298  nz=17
+    alpha=5.498820837e-06  valMSE=0.0031541475  R2=-0.02046301  nz=17
+    alpha=6.03494908e-06  valMSE=0.0031541137  R2=-0.02045207  nz=17
+    alpha=6.623349165e-06  valMSE=0.0031540766  R2=-0.02044007  nz=17
+    alpha=7.269117532e-06  valMSE=0.0031540359  R2=-0.02042691  nz=17
+    alpha=7.977847518e-06  valMSE=0.0031539913  R2=-0.02041247  nz=17
+    alpha=8.755677802e-06  valMSE=0.0031539423  R2=-0.02039663  nz=17
+    alpha=9.609345579e-06  valMSE=0.0031538886  R2=-0.02037925  nz=17
+    alpha=1.054624491e-05  valMSE=0.0031538297  R2=-0.02036020  nz=17
+    alpha=1.157449077e-05  valMSE=0.0031537651  R2=-0.02033930  nz=17
+    alpha=1.270298933e-05  valMSE=0.0031536943  R2=-0.02031638  nz=17
+    alpha=1.394151511e-05  valMSE=0.0031536166  R2=-0.02029125  nz=17
+    alpha=1.530079562e-05  valMSE=0.0031535314  R2=-0.02026369  nz=17
+    alpha=1.67926043e-05  valMSE=0.0031534380  R2=-0.02023348  nz=17
+    alpha=1.842986249e-05  valMSE=0.0031533357  R2=-0.02020036  nz=17
+    alpha=2.022675133e-05  valMSE=0.0031532234  R2=-0.02016406  nz=17
+    alpha=2.219883462e-05  valMSE=0.0031531005  R2=-0.02012427  nz=17
+    alpha=2.436319359e-05  valMSE=0.0031529657  R2=-0.02008067  nz=17
+    alpha=2.673857489e-05  valMSE=0.0031528180  R2=-0.02003290  nz=17
+    alpha=2.934555293e-05  valMSE=0.0031526563  R2=-0.01998056  nz=17
+    alpha=3.220670812e-05  valMSE=0.0031524791  R2=-0.01992324  nz=17
+    alpha=3.53468224e-05  valMSE=0.0031522851  R2=-0.01986047  nz=17
+    alpha=3.879309394e-05  valMSE=0.0031520727  R2=-0.01979175  nz=17
+    alpha=4.257537271e-05  valMSE=0.0031518402  R2=-0.01971653  nz=17
+    alpha=4.672641899e-05  valMSE=0.0031515858  R2=-0.01963421  nz=17
+    alpha=5.128218716e-05  valMSE=0.0031513074  R2=-0.01954416  nz=17
+    alpha=5.62821371e-05  valMSE=0.0031510031  R2=-0.01944569  nz=17
+    alpha=6.176957599e-05  valMSE=0.0031506703  R2=-0.01933804  nz=17
+    alpha=6.779203339e-05  valMSE=0.0031503067  R2=-0.01922040  nz=17
+    alpha=7.440167296e-05  valMSE=0.0031499096  R2=-0.01909192  nz=17
+    alpha=8.165574422e-05  valMSE=0.0031494760  R2=-0.01895164  nz=17
+    alpha=8.961707848e-05  valMSE=0.0031490029  R2=-0.01879858  nz=17
+    alpha=9.8354633e-05  valMSE=0.0031484870  R2=-0.01863167  nz=17
+    alpha=0.0001079440883  valMSE=0.0031479248  R2=-0.01844979  nz=17
+    alpha=0.0001184685036  valMSE=0.0031473099  R2=-0.01825083  nz=16
+    alpha=0.0001300190365  valMSE=0.0031466372  R2=-0.01803322  nz=16
+    alpha=0.0001426957321  valMSE=0.0031459055  R2=-0.01779648  nz=16
+    alpha=0.0001566083898  valMSE=0.0031451103  R2=-0.01753920  nz=16
+    alpha=0.0001718775144  valMSE=0.0031442469  R2=-0.01725988  nz=16
+    alpha=0.0001886353599  valMSE=0.0031433108  R2=-0.01695701  nz=16
+    alpha=0.0002070270746  valMSE=0.0031422027  R2=-0.01659852  nz=15
+    alpha=0.0002272119588  valMSE=0.0031409417  R2=-0.01619053  nz=15
+    alpha=0.0002493648443  valMSE=0.0031395752  R2=-0.01574843  nz=15
+    alpha=0.0002736776088  valMSE=0.0031380967  R2=-0.01527008  nz=15
+    alpha=0.0003003608378  valMSE=0.0031364994  R2=-0.01475333  nz=15
+    alpha=0.0003296456487  valMSE=0.0031350659  R2=-0.01428952  nz=14
+    alpha=0.0003617856925  valMSE=0.0031335380  R2=-0.01379523  nz=13
+    alpha=0.0003970593509  valMSE=0.0031318941  R2=-0.01326335  nz=13
+    alpha=0.0004357721474  valMSE=0.0031301247  R2=-0.01269090  nz=13
+    alpha=0.0004782593938  valMSE=0.0031281414  R2=-0.01204926  nz=12
+    alpha=0.0005248890943  valMSE=0.0031260126  R2=-0.01136050  nz=12
+    alpha=0.000576065133  valMSE=0.0031237348  R2=-0.01062359  nz=12
+    alpha=0.0006322307723  valMSE=0.0031208044  R2=-0.00967549  nz=10
+    alpha=0.0006938724922  valMSE=0.0031177630  R2=-0.00869152  nz=10
+    alpha=0.0007615242035  valMSE=0.0031145422  R2=-0.00764949  nz=9
+    alpha=0.0008357718733  valMSE=0.0031111428  R2=-0.00654967  nz=9
+    alpha=0.0009172585992  valMSE=0.0031075227  R2=-0.00537848  nz=9
+    alpha=0.00100669018  valMSE=0.0031035289  R2=-0.00408635  nz=8
+    alpha=0.00110484123  valMSE=0.0030992704  R2=-0.00270860  nz=8
+    alpha=0.001212561886  valMSE=0.0030945529  R2=-0.00118236  nz=7
+    alpha=0.001330785173  valMSE=0.0030891423  R2=+0.00056817  nz=7
+    alpha=0.001460535084  valMSE=0.0030839586  R2=+0.00224523  nz=6
+    alpha=0.001602935452  valMSE=0.0030803612  R2=+0.00340910  nz=6
+    alpha=0.00175921968  valMSE=0.0030766975  R2=+0.00459442  nz=6
+    alpha=0.001930741427  valMSE=0.0030730192  R2=+0.00578447  nz=6
+    alpha=0.002118986333  valMSE=0.0030709017  R2=+0.00646954  nz=5
+    alpha=0.002325584884  valMSE=0.0030692319  R2=+0.00700977  nz=5
+    alpha=0.002552326539  valMSE=0.0030675687  R2=+0.00754786  nz=4
+    alpha=0.002801175226  valMSE=0.0030640089  R2=+0.00869956  nz=4  <== selected
+    alpha=0.003074286353  valMSE=0.0030654176  R2=+0.00824383  nz=2
+    alpha=0.003374025477  valMSE=0.0030688674  R2=+0.00712769  nz=1
+    alpha=0.003702988795  valMSE=0.0030720511  R2=+0.00609767  nz=1
+    alpha=0.004064025632  valMSE=0.0030758204  R2=+0.00487820  nz=1
+    alpha=0.004460263114  valMSE=0.0030802885  R2=+0.00343261  nz=1
+    alpha=0.004895133261  valMSE=0.0030855916  R2=+0.00171692  nz=1
+    alpha=0.005372402711  valMSE=0.0030918925  R2=-0.00032161  nz=1
+    alpha=0.005896205343  valMSE=0.0030993869  R2=-0.00274628  nz=1
+    alpha=0.006471078085  valMSE=0.0031083096  R2=-0.00563306  nz=0
+  LASSO  train MSE=0.0031551909  val MSE=0.0030640089  OOS R2=+0.0086995595  nz=4
+  over alpha in [0.001,0.003]: valMSE 0.0030640089..0.0031035289  (range 1.290%), nonzero 4..8
+
+==============================================================================
+STAGE 3 - NONLINEAR MODEL (RANDOM FOREST)
+==============================================================================
+    depth=2  leaf=30  trainMSE=0.0029399988  valMSE=0.0032231428  R2=-0.04278510
+    depth=2  leaf=60  trainMSE=0.0029414926  valMSE=0.0032193579  R2=-0.04156057
+    depth=4  leaf=30  trainMSE=0.0025479311  valMSE=0.0033543030  R2=-0.08521945
+    depth=4  leaf=60  trainMSE=0.0025951406  valMSE=0.0033251511  R2=-0.07578792
+    depth=8  leaf=30  trainMSE=0.0020571795  valMSE=0.0035064431  R2=-0.13444141
+    depth=8  leaf=60  trainMSE=0.0021962617  valMSE=0.0033997844  R2=-0.09993405
+  affine-invariance check: max |pred(3Z+7) - pred(Z)| = 8.67e-19
+  SELECTED: max_depth=2 min_samples_leaf=60  n_estimators=300 max_features=4 seed=2026
+  train MSE=0.0029414926  val MSE=0.0032193579  OOS R2=-0.0415605689
+  built-in importance mass on the six within-week-constant market predictors = 0.8621
+
+==============================================================================
+STAGE 4 - IMPORTANCE ANALYSIS (DROP-TO-ZERO)
+==============================================================================
+  baseline OOS R2 = -0.0415605689
+    policy_uncertainty     +0.0086911000
+    liquidity_state        +0.0076031920
+    quality_signal         +0.0026298300
+    value_signal           +0.0002336646
+    sector_trend           +0.0001793685
+  negative importance: 8 predictors, most negative market_trend -0.0274132449
+  forest top-5        : ['policy_uncertainty', 'liquidity_state', 'quality_signal', 'value_signal', 'sector_trend']
+  LASSO retained      : ['market_risk', 'rate_pressure', 'value_signal', 'quality_signal']
+  OVERLAP (2)          : ['quality_signal', 'value_signal']
+  LASSO-only (2)     : ['market_risk', 'rate_pressure']
+  forest-only (3)    : ['policy_uncertainty', 'liquidity_state', 'sector_trend']
+  most important = policy_uncertainty  p10=-1.22644960 p90=1.27611095  profile -0.00337503..0.00025154
+  endpoint change = +0.0034528976
+  top-4 predictors under seeds 0/42/123/9999: [['liquidity_state', 'policy_uncertainty', 'quality_signal', 'risk_signal'], ['liquidity_state', 'policy_uncertainty', 'quality_signal', 'size_signal'], ['liquidity_state', 'policy_uncertainty', 'quality_signal', 'sector_trend'], ['liquidity_state', 'policy_uncertainty', 'quality_signal', 'risk_signal']]
+
+==============================================================================
+STAGE 5 - PORTFOLIO CONSTRUCTION
+==============================================================================
+  OLS            top16  spread=+0.02200834 (t=6.08)  Sharpe=+4.453041  IR=+7.865440  MDD=-0.04774982
+  LASSO          top16  spread=+0.02089582 (t=6.44)  Sharpe=+4.408564  IR=+10.309202  MDD=-0.04775122
+  Random forest  top16  spread=+0.02441377 (t=8.42)  Sharpe=+4.895040  IR=+9.874227  MDD=-0.04264429
+  Equal weight          Sharpe=+1.780305  IR=+0.000000  MDD=-0.07766625
+  candidate long-only rules (K >= 10):
+  [three-window robust composite = mean of the weighted
+   percentile score on the full block and on each validation half]
+    Random forest  top14  Sharpe=+5.152211 IR=+10.191406 MDD=-0.04018355  composite=17.131 (min 15.091)
+    Random forest  top15  Sharpe=+4.879861 IR=+10.367491 MDD=-0.04515182  composite=15.596 (min 14.364)
+    Random forest  top16  Sharpe=+4.895040 IR=+9.874227 MDD=-0.04264429  composite=14.263 (min 9.818)
+    Random forest  top11  Sharpe=+5.199310 IR=+9.446156 MDD=-0.04339796  composite=14.222 (min 9.091)
+    Random forest  top10  Sharpe=+5.480940 IR=+9.387086 MDD=-0.04842741  composite=14.121 (min 13.212)
+    OLS            top10  Sharpe=+5.173869 IR=+7.501949 MDD=-0.04164142  composite=14.040 (min 13.455)
+    Random forest  top20  Sharpe=+4.650417 IR=+11.241572 MDD=-0.04360476  composite=13.939 (min 10.242)
+    Random forest  top13  Sharpe=+4.982213 IR=+8.852458 MDD=-0.04242114  composite=13.697 (min 8.848)
+    Random forest  top12  Sharpe=+5.087112 IR=+9.234438 MDD=-0.04400690  composite=13.677 (min 9.939)
+    LASSO          top20  Sharpe=+4.442661 IR=+10.546585 MDD=-0.04568830  composite=12.424 (min 11.758)
+    OLS            top11  Sharpe=+4.710310 IR=+6.537008 MDD=-0.03951394  composite=11.798 (min 10.545)
+    Random forest  top24  Sharpe=+4.411409 IR=+10.100662 MDD=-0.04639327  composite=11.636 (min 10.909)
+  FINAL RULE -> Random forest / top14  Sharpe=+5.152211 IR=+10.191406 MDD=-0.04018355 composite=17.131 (runner-up Random forest / top 15 15.596)
+  OLS            top16 largest validation sector: 87.50% Sector_A week 99 (2023-05-26)
+  LASSO          top16 largest validation sector: 81.25% Sector_A week 100 (2023-06-02)
+  Random forest  top16 largest validation sector: 81.25% Sector_A week 91 (2023-03-31)
+  FINAL RULE largest validation sector: 92.86% Sector_A week 103 (2023-06-23), 13/14 names
+
+==============================================================================
+STAGE 6 - ROBUSTNESS OF THE RULE FAMILY
+==============================================================================
+  full 79-104    best Sharpe -> Random forest top10 (+5.480940); best MDD -> OLS top11 (-0.03951394)
+  first 79-91    best Sharpe -> Random forest top11 (+5.138645); best MDD -> OLS top11 (-0.03951394)
+  second 92-104  best Sharpe -> LASSO top13 (+5.870287); best MDD -> Random forest top14 (-0.01296077)
+
+==============================================================================
+STAGE 7 - FINAL WEIGHTS (REFIT ON WEEKS 1-104, THEN FIXED)
+==============================================================================
+  refit Random forest on 8320 rows (Weeks 1-104); scaler n_samples_seen=8320.0
+  weights 156x81; evaluation-window sector weight mean=0.6223 max=1.0000 weeks>=0.8=17 weeks=1.0=2
